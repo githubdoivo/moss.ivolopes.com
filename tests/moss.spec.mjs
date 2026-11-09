@@ -139,3 +139,18 @@ test("Portuguese has no serious accessibility problems", async ({ page }) => {
   const serious = violations.filter((v) => ["serious", "critical"].includes(v.impact));
   expect(serious.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
 });
+
+test("phone frame: nothing pinned, the window rests 160px down, the plate covers the clock strip", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => Math.abs(window.scrollY - 160) < 1);
+  const r = await page.evaluate(() => {
+    const pinned = [...document.querySelectorAll("body *")].filter((e) => ["fixed", "sticky"].includes(getComputedStyle(e).position)).map((e) => e.className || e.tagName);
+    const st = document.getElementById("stage").getBoundingClientRect(), v = document.getElementById("view").getBoundingClientRect();
+    return { pinned, stTop: st.top, stBottom: st.bottom, vTop: v.top, vH: v.height, ih: innerHeight };
+  });
+  expect(r.pinned).toEqual([]);
+  expect(r.stTop).toBeLessThanOrEqual(0);
+  expect(r.stBottom).toBeGreaterThanOrEqual(r.ih);
+  expect(Math.abs(r.vTop)).toBeLessThan(1);
+  expect(Math.abs(r.vH - r.ih)).toBeLessThan(2);
+});
